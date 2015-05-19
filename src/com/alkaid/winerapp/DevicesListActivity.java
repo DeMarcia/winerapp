@@ -26,6 +26,7 @@ public class DevicesListActivity extends ListActivity{
 		Intent data=new Intent();
 		data.putExtra(Constants.SELECTED_INDEX, position);
 		setResult(RESULT_OK, data);
+		finish();
 	}
 	
 	@Override

@@ -22,7 +22,7 @@ public class Constants {
     /** 是否�?启debug */
     public static final boolean D=true;
     /** 是否�?启Toast打印log */
-    public static final boolean T=false;
+    public static final boolean T=true;
     /** 目标设备mac */
 	public static final String TARGET_DEVICES_ADDRESS="D8:B3:77:E0:93:0E";	//htc mhh
 //	public static final String TARGET_DEVICES_ADDRESS="04:18:0F:30:AB:A8";  //nexus s lc
