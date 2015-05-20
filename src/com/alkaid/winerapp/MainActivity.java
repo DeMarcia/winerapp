@@ -160,11 +160,11 @@ public class MainActivity extends Activity implements OnClickListener {
 			// randNo = high * 10 + low;
 			// }
 			// status.setAuthCode(randNo);
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+//			try {
+//				Thread.sleep(500);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
 			// TODO Test
 			runOnUiThread(new Runnable() {
 				public void run() {
@@ -190,37 +190,50 @@ public class MainActivity extends Activity implements OnClickListener {
 
 		@Override
 		public void responseReadOrWrite() {
-			switch (status.getCurCmd()) {
-			// 根据之前的命令更新状态
-			case Status.CMD_LIGHT_OFF:
-				status.setLightOn(false);
-				break;
-			case Status.CMD_LIGHT_ON:
-				status.setLightOn(true);
-				break;
-			case Status.CMD_MOTO:
-				status.changeMoto();
-				break;
-			case Status.CMD_SWITCH_OFF:
-				status.setSwitchOn(false);
-				break;
-			case Status.CMD_SWITCH_ON:
-				status.setSwitchOn(true);
-				break;
-			case Status.CMD_TPD:
-				status.changeTpd();
-				break;
-			case Status.CMD_TURN_ALL:
-				status.setTurnStatus(Status.TURN_STATUS_ALL);
-				break;
-			case Status.CMD_TURN_BACK:
-				status.setTurnStatus(Status.TURN_STATUS_BACK);
-				break;
-			case Status.CMD_TURN_FOWARD:
-				status.setTurnStatus(Status.TURN_STATUS_FORWARD);
-				break;
+
+		}
+
+		@Override
+		public void onCharacteristicChanged(byte[] info) {
+			final String hexStr = Utils.byteArrayToHex(info);
+			runOnUiThread(new Runnable() {
+				public void run() {
+					Toast.makeText(MainActivity.this, "response status:"+hexStr, Toast.LENGTH_SHORT).show();
+				}
+			});
+			if(info.length == 1&&info[0] == (byte)0xaa){
+				switch (status.getCurCmd()) {
+				// 根据之前的命令更新状态
+				case Status.CMD_LIGHT_OFF:
+					status.setLightOn(false);
+					break;
+				case Status.CMD_LIGHT_ON:
+					status.setLightOn(true);
+					break;
+				case Status.CMD_MOTO:
+					status.changeMoto();
+					break;
+				case Status.CMD_SWITCH_OFF:
+					status.setSwitchOn(false);
+					break;
+				case Status.CMD_SWITCH_ON:
+					status.setSwitchOn(true);
+					break;
+				case Status.CMD_TPD:
+					status.changeTpd();
+					break;
+				case Status.CMD_TURN_ALL:
+					status.setTurnStatus(Status.TURN_STATUS_ALL);
+					break;
+				case Status.CMD_TURN_BACK:
+					status.setTurnStatus(Status.TURN_STATUS_BACK);
+					break;
+				case Status.CMD_TURN_FOWARD:
+					status.setTurnStatus(Status.TURN_STATUS_FORWARD);
+					break;
+				}
+				mHandler.sendEmptyMessage(MSG_WHAT_UPDATE_STATUS);
 			}
-			mHandler.sendEmptyMessage(MSG_WHAT_UPDATE_STATUS);
 		}
 
 	};
@@ -228,6 +241,10 @@ public class MainActivity extends Activity implements OnClickListener {
 	@Override
 	public void onClick(View v) {
 		int cmd = -1;
+        if(!isLogined()){
+            handleError(getString(R.string.notConnectedWhenSendCmd));
+            return;
+        }
 		switch (v.getId()) {
 		case R.id.imgLight:
 			cmd = status.isLightOn() ? Status.CMD_LIGHT_OFF

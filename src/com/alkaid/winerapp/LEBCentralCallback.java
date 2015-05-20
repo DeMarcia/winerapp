@@ -35,5 +35,8 @@ public interface LEBCentralCallback {
 	
 	/**返回读写操作*/
 	public void responseReadOrWrite();
+	
+	/**监听返回的参数信息*/
+	public void onCharacteristicChanged(byte[] param);
 
 }

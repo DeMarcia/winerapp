@@ -31,6 +31,7 @@ public class LEBCentralManager {
 	private static LEBCentralManager mInstance;
 	private BluetoothManager BLEManager;
 	private BluetoothAdapter BLEAdapter;
+	private BluetoothDevice BLEDevice;
 	private LEBCentralCallback mLEBCentralCallback;
 
 	private BluetoothGatt BLEGatt;// 当前连接的设备
@@ -43,8 +44,8 @@ public class LEBCentralManager {
 	private static Context mContext;
 
 	private Handler mHandler = new Handler();
-	
-	private boolean isEnableReq = true;//是否可以读和写,当false的话 阻塞不允许做读写操作
+
+	private boolean isEnableReq = false;// 是否可以读和写,当false的话 阻塞不允许做读写操作
 	private boolean isConnect = false;
 
 	// 常量
@@ -160,18 +161,19 @@ public class LEBCentralManager {
 				if (Constants.D)
 					Log.d(TAG, "device connected");
 				isConnect = true;
-				mLEBCentralCallback.deviceConnectedCallback(gatt);
+				isEnableReq = true;
 				BLEGatt.discoverServices();
+				mLEBCentralCallback.deviceConnectedCallback(gatt);
 			} else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-				isConnect = false;
-//				retryConTimes++;
+				reset();
+				// retryConTimes++;
 				if (Constants.D)
 					Log.d(TAG, "device disconnected");
-//				if (retryConTimes > RE_CONNECT_DEVICE_TIMES) {
-//					retryConTimes = 0;
-					mLEBCentralCallback.deviceDisConnectedCallback(gatt
-							.getDevice());
-//				}
+				// if (retryConTimes > RE_CONNECT_DEVICE_TIMES) {
+				// retryConTimes = 0;
+				mLEBCentralCallback
+						.deviceDisConnectedCallback(gatt.getDevice());
+				// }
 			}
 		};
 
@@ -183,11 +185,11 @@ public class LEBCentralManager {
 		@Override
 		public void onCharacteristicRead(BluetoothGatt gatt,
 				BluetoothGattCharacteristic characteristic, int status) {
-			if(!isConnect){
+			if (!isConnect) {
 				return;
 			}
 			String hexStr = Utils.byteArrayToHex(characteristic.getValue());
-			Log.d(TAG,"read" + hexStr+" "+status);
+			Log.d(TAG, "read" + hexStr + " " + status);
 			mLEBCentralCallback.responseReadOrWrite();
 			isEnableReq = true;
 			super.onCharacteristicRead(gatt, characteristic, status);
@@ -195,23 +197,40 @@ public class LEBCentralManager {
 
 		public void onCharacteristicWrite(BluetoothGatt gatt,
 				BluetoothGattCharacteristic characteristic, int status) {
-			if(!isConnect){
+			if (!isConnect) {
 				return;
 			}
 			String hexStr = Utils.byteArrayToHex(characteristic.getValue());
-			Log.d(TAG,"write" + hexStr+" "+status);
+			Log.d(TAG, "write" + hexStr + " " + status);
 			mLEBCentralCallback.responseReadOrWrite();
 			isEnableReq = true;
 			super.onCharacteristicWrite(gatt, characteristic, status);
 		};
+		
+		@Override
+		public void onCharacteristicChanged(BluetoothGatt gatt,
+				BluetoothGattCharacteristic characteristic) {
+			if (!isConnect) {
+				return;
+			}
+			String hexStr = Utils.byteArrayToHex(characteristic.getValue());
+			Log.d(TAG, "notify" + hexStr + " ");
+			mLEBCentralCallback.onCharacteristicChanged(characteristic.getValue());
+			isEnableReq = true;
+			super.onCharacteristicChanged(gatt, characteristic);
+		}
 
 	};
 
-	
 	public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
-		if (BLEAdapter == null || BLEGatt == null) {
+		if (isConnectDevice()) {
 			if (Constants.D)
 				Log.d(TAG, "current device is not exist");
+			mLEBCentralCallback.deviceDisConnectedCallback(BLEDevice);
+			return;
+		}
+		if (!isEnableReq) {
+			// 阻塞请求
 			return;
 		}
 		BLEGatt.readCharacteristic(characteristic);
@@ -221,13 +240,23 @@ public class LEBCentralManager {
 
 	/** 发送 外设character */
 	public void writeCharacteristic(byte[] data) {
+		if (!isConnectDevice()) {
+			mLEBCentralCallback.deviceDisConnectedCallback(BLEDevice);
+			if (Constants.D)
+				Log.d(TAG, "current device is not exist");
+			return;
+		}
+		if (!isEnableReq) {
+			// 阻塞请求
+			return;
+		}
 		ArrayList<BluetoothGattCharacteristic> characteristics = getCharacteristic();
 		for (BluetoothGattCharacteristic characteristic : characteristics) {
 			byte[] values = data;
 			characteristic.setValue(values);
 			BLEGatt.writeCharacteristic(characteristic);
 		}
-		isEnableReq =false;
+		isEnableReq = false;
 		mLEBCentralCallback.requestReadOrWrite();
 	}
 
@@ -246,6 +275,7 @@ public class LEBCentralManager {
 					.getCharacteristics();
 			for (BluetoothGattCharacteristic bluetoothGattCharacteristic : characteristics) {
 				charas.add(bluetoothGattCharacteristic);
+				BLEGatt.setCharacteristicNotification(bluetoothGattCharacteristic, true);
 			}
 		}
 		return charas;
@@ -260,7 +290,36 @@ public class LEBCentralManager {
 		if (Constants.D)
 			Log.d(TAG, "device start connected");
 		mLEBCentralCallback.startDeviceConnectCallback(device);
+		BLEDevice = device;
 		BLEGatt = device.connectGatt(mContext, false, BLEGattCallback);
+	}
+
+	/**
+	 * 查看是否有连接到设备
+	 * 
+	 * @return
+	 */
+	public boolean isConnectDevice() {
+		if (BLEManager != null
+				&& BLEAdapter != null
+				&& BLEDevice != null
+				&& BLEGatt != null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public void reset(){
+		if(BLEGatt!=null){
+			BLEGatt.disconnect();
+			BLEGatt = null;
+		}
+		BLEDevice = null;
+		BLEDevices = null;
+		isEnableReq = false;
+		isConnect =false;
+
 	}
 
 }
