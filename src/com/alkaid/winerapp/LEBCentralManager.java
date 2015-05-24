@@ -36,7 +36,7 @@ public class LEBCentralManager {
 
 	private BluetoothGatt BLEGatt;// 当前连接的设备
 
-	public ArrayList<BluetoothDevice> BLEDevices = null;
+	public ArrayList<BluetoothDevice> BLEDevices = new ArrayList<BluetoothDevice>();
 
 	private LEBCentralManager() {
 	}
@@ -47,6 +47,7 @@ public class LEBCentralManager {
 
 	private boolean isEnableReq = false;// 是否可以读和写,当false的话 阻塞不允许做读写操作
 	private boolean isConnect = false;
+	private String writeUUID=null;
 
 	// 常量
 	private static final long SCAN_PERIOD = 5000;// 查找外设期限
@@ -60,21 +61,25 @@ public class LEBCentralManager {
 		LEBCentralManager.mContext = mContext;
 		return mInstance;
 	}
+	public static LEBCentralManager getInstance() {
+		if (mInstance == null) {
+			throw new RuntimeException("instance can't be null!");
+		}
+		return mInstance;
+	}
 
 	/**
 	 * 蓝牙
 	 * 
 	 * @param mLEBCentralCallback
 	 */
-	public void operate(LEBCentralCallback mLEBCentralCallback) {
+	public void operate(LEBCentralCallback mLEBCentralCallback,String writeUUID) {
 		if (mContext != null) {
 			this.BLEManager = (BluetoothManager) mContext
 					.getSystemService(Context.BLUETOOTH_SERVICE);
 			this.BLEAdapter = BLEManager.getAdapter();
 			this.mLEBCentralCallback = mLEBCentralCallback;
-			if (BLEDevices == null) {
-				BLEDevices = new ArrayList<BluetoothDevice>();
-			}
+			this.writeUUID=writeUUID;
 		}
 	}
 
@@ -95,7 +100,6 @@ public class LEBCentralManager {
 						"scaned bluetoothDevice name:" + device.getName()
 								+ " rssi：" + rssi + " scanRecord:"
 								+ scanRecord.toString());
-
 			if (!BLEDevices.contains(device)) {
 				BLEDevices.add(device);
 			}
@@ -114,7 +118,7 @@ public class LEBCentralManager {
 				public void run() {
 					BLEAdapter.stopLeScan(mLeScanCallback);
 					if (mLEBCentralCallback != null) {
-						if (BLEDevices != null && BLEDevices.size() > 0) {
+						if (BLEDevices.size() > 0) {
 							mLEBCentralCallback.scanSuccessCallback(BLEDevices);
 						} else {
 							mLEBCentralCallback.scanNoDeviceCallback();
@@ -185,9 +189,6 @@ public class LEBCentralManager {
 		@Override
 		public void onCharacteristicRead(BluetoothGatt gatt,
 				BluetoothGattCharacteristic characteristic, int status) {
-			if (!isConnect) {
-				return;
-			}
 			String hexStr = Utils.byteArrayToHex(characteristic.getValue());
 			Log.d(TAG, "read" + hexStr + " " + status);
 			mLEBCentralCallback.responseReadOrWrite();
@@ -197,9 +198,6 @@ public class LEBCentralManager {
 
 		public void onCharacteristicWrite(BluetoothGatt gatt,
 				BluetoothGattCharacteristic characteristic, int status) {
-			if (!isConnect) {
-				return;
-			}
 			String hexStr = Utils.byteArrayToHex(characteristic.getValue());
 			Log.d(TAG, "write" + hexStr + " " + status);
 			mLEBCentralCallback.responseReadOrWrite();
@@ -210,9 +208,6 @@ public class LEBCentralManager {
 		@Override
 		public void onCharacteristicChanged(BluetoothGatt gatt,
 				BluetoothGattCharacteristic characteristic) {
-			if (!isConnect) {
-				return;
-			}
 			String hexStr = Utils.byteArrayToHex(characteristic.getValue());
 			Log.d(TAG, "notify" + hexStr + " ");
 			mLEBCentralCallback.onCharacteristicChanged(characteristic.getValue());
@@ -252,11 +247,18 @@ public class LEBCentralManager {
 		}
 		ArrayList<BluetoothGattCharacteristic> characteristics = getCharacteristic();
 		for (BluetoothGattCharacteristic characteristic : characteristics) {
-			byte[] values = data;
-			characteristic.setValue(values);
-			BLEGatt.writeCharacteristic(characteristic);
+			String uuid = characteristic.getUuid().toString();
+			Log.d(TAG, "finde char uuid="+uuid);
+			if(uuid.equalsIgnoreCase(writeUUID)){
+				Log.d(TAG, "write char uuid="+uuid);
+				byte[] values = data;
+				characteristic.setValue(values);
+				BLEGatt.setCharacteristicNotification(characteristic, true);
+				BLEGatt.writeCharacteristic(characteristic);
+			}
 		}
-		isEnableReq = false;
+		//TODO test 关闭先
+//		isEnableReq = false;
 		mLEBCentralCallback.requestReadOrWrite();
 	}
 
@@ -275,7 +277,7 @@ public class LEBCentralManager {
 					.getCharacteristics();
 			for (BluetoothGattCharacteristic bluetoothGattCharacteristic : characteristics) {
 				charas.add(bluetoothGattCharacteristic);
-				BLEGatt.setCharacteristicNotification(bluetoothGattCharacteristic, true);
+//				BLEGatt.setCharacteristicNotification(bluetoothGattCharacteristic, true);
 			}
 		}
 		return charas;
@@ -316,10 +318,14 @@ public class LEBCentralManager {
 			BLEGatt = null;
 		}
 		BLEDevice = null;
-		BLEDevices = null;
+//		BLEDevices = null;
+		BLEDevices.clear();
 		isEnableReq = false;
 		isConnect =false;
 
+	}
+	public void setWriteUUID(String writeUUID) {
+		this.writeUUID = writeUUID;
 	}
 
 }

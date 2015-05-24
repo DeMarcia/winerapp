@@ -29,5 +29,7 @@ public class Constants {
 	
 	public static final String LIST_DEVICES="list_devices";
 	public static final String SELECTED_INDEX="selected_index";
+	
+	public static final String UUID_CH_WRITE="0000ffe1-0000-1000-8000-00805f9b34fb";
 
 }

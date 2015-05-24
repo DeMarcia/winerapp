@@ -20,14 +20,14 @@ public class Status {
 
     public static final int[] TPDS_NORMAL = {650, 750 , 850 , 1000 , 1950};
     public static final int[] TPDS_ZERO = {650 , 785 , 950 , 1150 , 1440 , 1570 , 1728 , 1838 , 1920 , 2107 , 2335 , 2618 , 2787 , 2880 , 3600};
-
-    private int authCode = 100;
+    private int curTpdIndex=0;
     private int motoNums = 0;
     private int curMoto = 0;
+
+    private int authCode = 100;
     private boolean isLightOn = false;
     private boolean isSwitchOn = false;
     private int turnStatus = TURN_STATUS_FORWARD;
-    private int curTpdIndex=0;
     private int curCmd=-1;
 
     public void changeMoto(){

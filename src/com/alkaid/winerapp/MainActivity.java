@@ -84,7 +84,7 @@ public class MainActivity extends Activity implements OnClickListener {
 				R.drawable.anim_turn_forward);
 		LEBCentralManager mLEBCentralManager = LEBCentralManager
 				.getInstance(this);
-		mLEBCentralManager.operate(mLEBCentralCallback);
+		mLEBCentralManager.operate(mLEBCentralCallback,Constants.UUID_CH_WRITE);
 		if (!mLEBCentralManager.isLEBEnable()) {
 			// 开启蓝牙
 			Intent enableBtIntent = new Intent(
@@ -165,6 +165,9 @@ public class MainActivity extends Activity implements OnClickListener {
 //			} catch (InterruptedException e) {
 //				e.printStackTrace();
 //			}
+			//验证
+//			LEBCentralManager.getInstance().writeCharacteristic(
+//					new byte[] { (byte) 0xcc,(byte) 0x49 });
 			// TODO Test
 			runOnUiThread(new Runnable() {
 				public void run() {
@@ -198,7 +201,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			final String hexStr = Utils.byteArrayToHex(info);
 			runOnUiThread(new Runnable() {
 				public void run() {
-					Toast.makeText(MainActivity.this, "response status:"+hexStr, Toast.LENGTH_SHORT).show();
+					Toast.makeText(MainActivity.this, "response status:0x"+hexStr, Toast.LENGTH_SHORT).show();
 				}
 			});
 			if(info.length == 1&&info[0] == (byte)0xaa){
@@ -378,12 +381,12 @@ public class MainActivity extends Activity implements OnClickListener {
 
 	/** 发送指令 */
 	public void sendCmd(final int cmd) {
-		new Runnable() {
+		runOnUiThread(new Runnable() {
 			public void run() {
-				Toast.makeText(MainActivity.this, ("发送的数据为：" + cmd),
+				Toast.makeText(MainActivity.this, ("发送的数据为：0x" + String.format("%02X", cmd)),
 						Toast.LENGTH_SHORT).show();
 			}
-		};
+		});
 		LEBCentralManager.getInstance(this).writeCharacteristic(
 				new byte[] { (byte) cmd });
 	}
