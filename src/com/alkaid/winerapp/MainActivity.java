@@ -82,6 +82,7 @@ public class MainActivity extends Activity implements OnClickListener {
 				R.drawable.anim_turn_back);
 		animTurnForward = (AnimationDrawable) getResources().getDrawable(
 				R.drawable.anim_turn_forward);
+		status = new Status();
 		LEBCentralManager mLEBCentralManager = LEBCentralManager
 				.getInstance(this);
 		mLEBCentralManager.operate(mLEBCentralCallback,Constants.UUID_CH_WRITE);
@@ -204,7 +205,56 @@ public class MainActivity extends Activity implements OnClickListener {
 					Toast.makeText(MainActivity.this, "response status:0x"+hexStr, Toast.LENGTH_SHORT).show();
 				}
 			});
-			if(info.length == 1&&info[0] == (byte)0xaa){
+			//初始化moto数量反馈
+			if(status.isLogined() && info.length==1){
+				switch (info[0]) {
+				case 0x30:
+					status.setMotoNums(1);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+					break;
+				case 0x31:
+					status.setMotoNums(2);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+					break;
+				case 0x32:
+					status.setMotoNums(4);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+					break;
+				case 0x33:
+					status.setMotoNums(6);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+					break;
+				case 0x34:
+					status.setMotoNums(8);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+					break;
+				case 0x35:
+					status.setMotoNums(9);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+					break;
+				case 0x36:
+					status.setMotoNums(18);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+					break;
+				case 0x37:
+					status.setMotoNums(20);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+					break;
+				case 0x38:
+					status.setMotoNums(24);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+					break;
+					//特殊马达
+				case 0x39:
+					status.setMotoNums(1);
+					status.setMotoType(Status.MOTO_TYPE_ZERO);
+					break;
+				default:
+					break;
+				}
+			}
+			//指令反馈
+			if(status.isLogined() && info.length == 1&&info[0] == (byte)0xaa){
 				switch (status.getCurCmd()) {
 				// 根据之前的命令更新状态
 				case Status.CMD_LIGHT_OFF:
@@ -222,9 +272,9 @@ public class MainActivity extends Activity implements OnClickListener {
 				case Status.CMD_SWITCH_ON:
 					status.setSwitchOn(true);
 					break;
-				case Status.CMD_TPD:
-					status.changeTpd();
-					break;
+//				case Status.CMD_TPD:
+//					status.changeTpd();
+//					break;
 				case Status.CMD_TURN_ALL:
 					status.setTurnStatus(Status.TURN_STATUS_ALL);
 					break;
@@ -234,9 +284,16 @@ public class MainActivity extends Activity implements OnClickListener {
 				case Status.CMD_TURN_FOWARD:
 					status.setTurnStatus(Status.TURN_STATUS_FORWARD);
 					break;
+				default:
+					if(status.isTpdCmd()){
+						status.changeTpd();
+					}
+					break;
 				}
 				mHandler.sendEmptyMessage(MSG_WHAT_UPDATE_STATUS);
+				return;
 			}
+			
 		}
 
 	};
@@ -244,7 +301,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	@Override
 	public void onClick(View v) {
 		int cmd = -1;
-        if(!isLogined()){
+        if(!status.isLogined()){
             handleError(getString(R.string.notConnectedWhenSendCmd));
             return;
         }
@@ -254,6 +311,8 @@ public class MainActivity extends Activity implements OnClickListener {
 					: Status.CMD_LIGHT_ON;
 			break;
 		case R.id.imgMoto:
+			if(status.getMotoNums()<=1)
+				return;
 			cmd = Status.CMD_MOTO;
 			break;
 		case R.id.imgSwitch:
@@ -261,7 +320,7 @@ public class MainActivity extends Activity implements OnClickListener {
 					: Status.CMD_SWITCH_ON;
 			break;
 		case R.id.imgTpd:
-			cmd = Status.CMD_TPD;
+			cmd = status.getCurTpdCmd();
 			break;
 		case R.id.imgTurn:
 			switch (status.getTurnStatus()) {
@@ -287,7 +346,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		if(status == null){
 			status = new Status();
 		}
-		if (isLogined()) {
+		if (status.isLogined()) {
 			imgTurnBack.setImageDrawable(animTurnBack);
 			animTurnBack.stop();
 			animTurnBack.start();
@@ -342,7 +401,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			imgTurnForward.setVisibility(View.VISIBLE);
 			break;
 		}
-		imgCurMoto.setImageBitmap(drawNumImg(status.getCurMoto()));
+		imgCurMoto.setImageBitmap(drawNumImg(status.getCurMoto()+1));
 		imgCurTpd.setImageBitmap(drawNumImg(status.getTpd()));
 	}
 
@@ -533,8 +592,5 @@ public class MainActivity extends Activity implements OnClickListener {
 		imgTurn.setEnabled(enable);
 	}
 
-	private boolean isLogined() {
-		return true;
-	}
 
 }
