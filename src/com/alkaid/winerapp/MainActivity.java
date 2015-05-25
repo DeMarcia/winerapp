@@ -47,8 +47,8 @@ public class MainActivity extends Activity implements OnClickListener {
 
 	private static final int REQUEST_ENABLE_BT = 1;
 
-	private static final int MSG_WHAT_INIT_VIEW_UNLOAD = 1;
-	private static final int MSG_WHAT_INIT_VIEW_LOAD = 2;
+//	private static final int MSG_WHAT_INIT_VIEW_UNLOAD = 1;
+//	private static final int MSG_WHAT_INIT_VIEW_LOAD = 2;
 	private static final int MSG_WHAT_ERROR = 3;
 	private static final int MSG_WHAT_UPDATE_STATUS = 4;
 	private static final int MSG_WHAT_VERIFY_ERROR = 5;
@@ -101,13 +101,12 @@ public class MainActivity extends Activity implements OnClickListener {
 
 		@Override
 		public void startScanCallback() {
-			Utils.showProgressDialog(MainActivity.this,
-					getString(R.string.tip_find_device));
+			showProgressDialog(getString(R.string.tip_find_device));
 		}
 
 		@Override
 		public void scanSuccessCallback(ArrayList<BluetoothDevice> BLEDevices) {
-			Utils.dismissProgressDialog();
+			dismissPdg();
 			Intent intent = new Intent(MainActivity.this,
 					DevicesListActivity.class);
 			ArrayList<String> deviceInfos = new ArrayList<String>();
@@ -128,63 +127,24 @@ public class MainActivity extends Activity implements OnClickListener {
 
 		@Override
 		public void scanNoDeviceCallback() {
-			Utils.dismissProgressDialog();
-			handleError(getString(R.string.notDiscoveryDevices));
+			handleErrorOnUIThread(getString(R.string.notDiscoveryDevices));
 		}
 
 		@Override
 		public void startDeviceConnectCallback(BluetoothDevice device) {
-			Utils.showProgressDialog(MainActivity.this,
+			showProgressDialog(
 					getString(R.string.tip_connect_device));
 		}
 
 		@Override
 		public void deviceConnectedCallback(BluetoothGatt gatt) {
-			Utils.dismissProgressDialog();
-			// 连接外设成功操作
-			runOnUiThread(new Runnable() {
-				public void run() {
-					Toast.makeText(getApplicationContext(),
-							R.string.matchedConnected, Toast.LENGTH_SHORT)
-							.show();
-				}
-			});
-			status = new Status();
-			// // startReader();
-			// // 开始验证链接
-			// int randNo = (int) (Math.random() * 1000);
-			// randNo = randNo < 100 ? randNo + 100 : randNo;
-			// if (randNo > 127) {
-			// int length = String.valueOf(randNo).length();
-			// int high = randNo / (int) Math.pow(10, length - 1);
-			// int low = randNo % 10;
-			// randNo = high * 10 + low;
-			// }
-			// status.setAuthCode(randNo);
-//			try {
-//				Thread.sleep(500);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-			//验证
-//			LEBCentralManager.getInstance().writeCharacteristic(
-//					new byte[] { (byte) 0xcc,(byte) 0x49 });
-			// TODO Test
-			runOnUiThread(new Runnable() {
-				public void run() {
-					initView(false);
-				}
-			});
+			
 
 		}
 
 		@Override
 		public void deviceDisConnectedCallback(BluetoothDevice device) {
-			runOnUiThread(new Runnable() {
-				public void run() {
-					handleError(getString(R.string.connectionFailed));
-				}
-			});
+			handleErrorOnUIThread(getString(R.string.connectionFailed));
 		}
 
 		@Override
@@ -200,58 +160,85 @@ public class MainActivity extends Activity implements OnClickListener {
 		@Override
 		public void onCharacteristicChanged(byte[] info) {
 			final String hexStr = Utils.byteArrayToHex(info);
-			runOnUiThread(new Runnable() {
-				public void run() {
-					Toast.makeText(MainActivity.this, "response status:0x"+hexStr, Toast.LENGTH_SHORT).show();
+			toastDebug("receive data:0x"+hexStr);
+			//test 忽略目前外设返回的0xFF...
+			if(info[0]==(byte)0xff)
+				return;
+			if(!status.isAuthed()&&status.getCurCmd()==Status.CMD_AUTH){
+				if(info.length==2&&info[0]==(byte)0xcc &&info[1]==status.getAuthCode()){
+					showProgressDialog(getString(R.string.beginInit));
+					//验证成功
+					status.setAuthed(true);
+					//请求初始化马达
+					sendCmd(Status.CMD_INIT_MOTO);
+				}else{
+					handleErrorOnUIThread(getString(R.string.verifyFailed));
 				}
-			});
+				return;
+			}
 			//初始化moto数量反馈
-			if(status.isLogined() && info.length==1){
+			if(status.isAuthed() && !status.isLogined() && status.getCurCmd()==Status.CMD_INIT_MOTO && info.length==1){
+				status.setLogined(true);
 				switch (info[0]) {
-				case 0x30:
+				case (byte)0x30:
 					status.setMotoNums(1);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
-				case 0x31:
+				case (byte)0x31:
 					status.setMotoNums(2);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
-				case 0x32:
+				case (byte)0x32:
 					status.setMotoNums(4);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
-				case 0x33:
+				case (byte)0x33:
 					status.setMotoNums(6);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
-				case 0x34:
+				case (byte)0x34:
 					status.setMotoNums(8);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
-				case 0x35:
+				case (byte)0x35:
 					status.setMotoNums(9);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
-				case 0x36:
+				case (byte)0x36:
 					status.setMotoNums(18);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
-				case 0x37:
+				case (byte)0x37:
 					status.setMotoNums(20);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
-				case 0x38:
+				case (byte)0x38:
 					status.setMotoNums(24);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
 					//特殊马达
-				case 0x39:
+				case (byte)0x39:
 					status.setMotoNums(1);
 					status.setMotoType(Status.MOTO_TYPE_ZERO);
 					break;
 				default:
+					status.setLogined(false);
 					break;
 				}
+				//马达初始化成功代表登录成功
+				if(status.isLogined()){
+					runOnUiThread(new Runnable() {
+						public void run() {
+							dismissPdg();
+							Toast.makeText(getApplicationContext(),
+									R.string.matchedConnected, Toast.LENGTH_SHORT)
+									.show();
+						}
+					});
+				}else{
+					handleErrorOnUIThread(""+getString(R.string.initFailed));
+				}
+				return;
 			}
 			//指令反馈
 			if(status.isLogined() && info.length == 1&&info[0] == (byte)0xaa){
@@ -296,6 +283,32 @@ public class MainActivity extends Activity implements OnClickListener {
 			
 		}
 
+		@Override
+		public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+			if(status==BluetoothGatt.GATT_SUCCESS){
+				showProgressDialog(getString(R.string.beginVerify));
+				MainActivity.this. status = new Status();
+				// // startReader();
+				 // 开始验证链接
+				byte randNo = (byte) (Math.random()*0xff );
+				if(Constants.D){
+					Log.i(TAG, "rand 0x"+Utils.byte2HexStr(randNo));
+				}
+				toastDebug("The Auth Code is 0x"+Utils.byte2HexStr(randNo));
+				MainActivity.this.status.setAuthCode(randNo);
+				//验证
+				MainActivity.this.status.setCurCmd(Status.CMD_AUTH);
+				sendData(new byte[]{(byte) 0xcc,Utils.encode(randNo)});
+				runOnUiThread(new Runnable() {
+					public void run() {
+						initView();
+					}
+				});
+			}else{
+				handleErrorOnUIThread(getString(R.string.discoverServiceFailed));
+			}
+		}
+
 	};
 
 	@Override
@@ -338,7 +351,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		default:
 			return;
 		}
-		status.setCurCmd(cmd);
+		
 		sendCmd(cmd);
 	}
 
@@ -437,17 +450,30 @@ public class MainActivity extends Activity implements OnClickListener {
 		}
 		return result;
 	}
+	
+	private void toastDebug(final String msg){
+		if(Constants.D){
+			runOnUiThread(new Runnable() {
+				public void run() {
+					Toast.makeText(MainActivity.this, msg,
+							Toast.LENGTH_SHORT).show();
+				}
+			});
+		}
+	}
 
 	/** 发送指令 */
 	public void sendCmd(final int cmd) {
-		runOnUiThread(new Runnable() {
-			public void run() {
-				Toast.makeText(MainActivity.this, ("发送的数据为：0x" + String.format("%02X", cmd)),
-						Toast.LENGTH_SHORT).show();
-			}
-		});
+		status.setCurCmd(cmd);
+		toastDebug ("send data：0x" + String.format("%02X", cmd));
 		LEBCentralManager.getInstance(this).writeCharacteristic(
 				new byte[] { (byte) cmd });
+	}
+	/** 发送指令 */
+	public void sendData(final byte[] data) {
+		String hexStr = Utils.byteArrayToHex(data);
+		toastDebug("send data：0x" + hexStr);
+		LEBCentralManager.getInstance(this).writeCharacteristic(data);
 	}
 
 	@Override
@@ -471,6 +497,7 @@ public class MainActivity extends Activity implements OnClickListener {
 				handleError(getString(R.string.cancelChooseDevice));
 				return;
 			}
+			LEBCentralManager.getInstance().stopScan();
 			ArrayList<BluetoothDevice> BLEDevices = LEBCentralManager
 					.getInstance(this).BLEDevices;
 			if (BLEDevices != null && BLEDevices.size() > 0) {
@@ -478,53 +505,81 @@ public class MainActivity extends Activity implements OnClickListener {
 				LEBCentralManager.getInstance(this).connect(
 						BLEDevices.get(selectedIndex));
 			}
+		}else{
+			handleError(getString(R.string.cancelChooseDevice));
 		}
 
 	}
 
-	private void initView(boolean loading) {
-		if (loading) {
-			layMain.setBackgroundResource(R.drawable.loading_bg);
-			pdg = ProgressDialog.show(this, null,
-					getString(R.string.tip_find_device), true, true,
-					new DialogInterface.OnCancelListener() {
-						@Override
-						public void onCancel(DialogInterface dialog) {
-							shutdown();
-							dismissPdg();
-							handleError(getString(R.string.cancelSearchDevice));
-						}
-					});
-			shutdown();
-			if (Constants.D)
-				Log.d(TAG, "开始蓝牙操作");
-			Utils.toast(getApplicationContext(), "开始蓝牙操作");
-			LEBCentralManager.getInstance(this).scan();
-		} else {
+	private void initView() {
+//		if (loading) {
+//			layMain.setBackgroundResource(R.drawable.loading_bg);
+//			showProgressDialog(getString(R.string.tip_find_device));
+//			shutdown();
+//			if (Constants.D)
+//				Log.d(TAG, "开始蓝牙操作");
+//			Utils.toast(getApplicationContext(), "开始蓝牙操作");
+//			LEBCentralManager.getInstance(this).scan();
+//		} else {
 			layBar.setVisibility(View.VISIBLE);
 			layContent.setVisibility(View.VISIBLE);
 			layMain.setBackgroundResource(R.drawable.main_bg);
 			updateStatusView();
-			dismissPdg();
-		}
+//			dismissPdg();
+//		}
 	}
 
 	private void shutdown() {
-		// if(null!=reader) reader.shutdown();
-		// btop.cancel();
+		LEBCentralManager.getInstance().stopScan();
 	}
 
 	private void dismissPdg() {
-		if (pdg != null && pdg.isShowing()) {
-			pdg.dismiss();
-			pdg = null;
-		}
+		runOnUiThread(new Runnable() {
+			public void run() {
+				if (pdg != null && pdg.isShowing()) {
+					pdg.dismiss();
+					pdg = null;
+				}
+			}
+		});
+	}
+	/**
+	 * 显示加载框
+	 * 
+	 * @param mContext
+	 * @param msg
+	 */
+	private void showProgressDialog(final String msg) {
+		runOnUiThread(new Runnable() {
+			public void run() {
+				if (null != pdg && pdg.isShowing()) {
+					pdg.setMessage(msg);
+				} else {
+					// pdg = ProgressDialog.show(this, null, msg, true, true);
+					pdg = ProgressDialog.show(MainActivity.this, null, msg, true, true,
+							new DialogInterface.OnCancelListener() {
+								@Override
+								public void onCancel(DialogInterface dialog) {
+									shutdown();
+									dismissPdg();
+									handleError(getString(R.string.cancelOperation));
+								}
+							});
+				}
+			}
+		});
+	}
+	
+	private void handleErrorOnUIThread(String error){
+		Message msg=mHandler.obtainMessage(MSG_WHAT_ERROR);
+		msg.obj=error;
+		mHandler.sendMessage(msg);
 	}
 
 	private void handleError(String msg) {
 		dismissPdg();
 		shutdown();
-		initView(false);
+		initView();
 		msg += getString(R.string.tip_error_append);
 		if (null != errorDialog && errorDialog.isShowing()) {
 			errorDialog.setMessage(msg);
@@ -559,12 +614,12 @@ public class MainActivity extends Activity implements OnClickListener {
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-			case MSG_WHAT_INIT_VIEW_LOAD:
-				initView(true);
-				break;
-			case MSG_WHAT_INIT_VIEW_UNLOAD:
-				initView(false);
-				break;
+//			case MSG_WHAT_INIT_VIEW_LOAD:
+//				initView(true);
+//				break;
+//			case MSG_WHAT_INIT_VIEW_UNLOAD:
+//				initView(false);
+//				break;
 			case MSG_WHAT_ERROR:
 				String errMsg = (String) msg.obj;
 				handleError(errMsg);

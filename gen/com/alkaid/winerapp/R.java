@@ -139,43 +139,55 @@ public final class R {
     public static final class string {
         public static final int action_settings=0x7f060001;
         public static final int app_name=0x7f060000;
+        /** 进度提示：正在初始化
+         */
+        public static final int beginInit=0x7f060017;
         /** 进度提示：正在验证设备
          */
-        public static final int beginVerify=0x7f060014;
+        public static final int beginVerify=0x7f060016;
         public static final int btn_cancel=0x7f060005;
         public static final int btn_exit=0x7f060004;
         public static final int btn_ok=0x7f060002;
         public static final int btn_retry=0x7f060003;
         /** 提示：您中途取消了选择设备的操作
          */
-        public static final int cancelChooseDevice=0x7f060011;
+        public static final int cancelChooseDevice=0x7f060012;
         /** 提示：您中途取消了连接设备的操作
          */
-        public static final int cancelConnectDevice=0x7f060012;
+        public static final int cancelConnectDevice=0x7f060013;
+        /** 提示：您中途取消操作
+         */
+        public static final int cancelOperation=0x7f060015;
         /** 提示：您中途取消了搜索设备的操作
          */
-        public static final int cancelSearchDevice=0x7f060010;
+        public static final int cancelSearchDevice=0x7f060011;
         /** 提示：您中途取消了验证设备的操作
          */
-        public static final int cancelVerifyDevice=0x7f060013;
+        public static final int cancelVerifyDevice=0x7f060014;
         /** 错误提示：连接错误
          */
-        public static final int connectException=0x7f06000e;
+        public static final int connectException=0x7f06000f;
         /** 错误提示：连接失败
          */
         public static final int connectionFailed=0x7f06000b;
+        /** 错误提示：查找服务失败
+         */
+        public static final int discoverServiceFailed=0x7f06000c;
+        /** 错误提示：验证设备失败
+         */
+        public static final int initFailed=0x7f060019;
         /** 错误提示：配对失败
          */
-        public static final int matchFailed=0x7f06000c;
+        public static final int matchFailed=0x7f06000d;
         /** 提示：连接成功配对成功
          */
-        public static final int matchedConnected=0x7f06000f;
+        public static final int matchedConnected=0x7f060010;
         /** 错误提示：您的设备上没有发现蓝牙模块
          */
         public static final int notBluetoothAvailable=0x7f060009;
         /** 错误提示：没有连接到任何蓝牙设备 (发送指令时发现无设备的错误提示)
          */
-        public static final int notConnectedWhenSendCmd=0x7f060016;
+        public static final int notConnectedWhenSendCmd=0x7f06001a;
         /** 错误提示：附近没有搜索到蓝牙设备
          */
         public static final int notDiscoveryDevices=0x7f06000a;
@@ -191,10 +203,10 @@ public final class R {
         public static final int tip_find_device=0x7f060007;
         /** 错误提示：未知错误
          */
-        public static final int unknowException=0x7f06000d;
+        public static final int unknowException=0x7f06000e;
         /** 错误提示：验证设备失败
          */
-        public static final int verifyFailed=0x7f060015;
+        public static final int verifyFailed=0x7f060018;
     }
     public static final class style {
         /** 

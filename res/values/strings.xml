@@ -19,6 +19,8 @@
     <string name="notDiscoveryDevices">Didnot found bluetooth devices nearby!</string>
     <!--错误提示：连接失败-->
     <string name="connectionFailed">Connect failed!</string>
+    <!--错误提示：查找服务失败-->
+    <string name="discoverServiceFailed">Discover services failed!</string>
     <!--错误提示：配对失败-->
     <string name="matchFailed">Match failed!</string>
     <!--错误提示：未知错误-->
@@ -26,7 +28,7 @@
     <!--错误提示：连接错误-->
     <string name="connectException">Connection broken!Maybe the server is busy or shutdown.</string>
     <!--提示：连接成功配对成功-->
-    <string name="matchedConnected">Connect and match success!</string>
+    <string name="matchedConnected">Connect and verify success!</string>
     <!--提示：您中途取消了搜索设备的操作-->
     <string name="cancelSearchDevice">You canceled to search a device!</string>
     <!--提示：您中途取消了选择设备的操作-->
@@ -35,10 +37,16 @@
     <string name="cancelConnectDevice">You canceled to connect the device!</string>
     <!--提示：您中途取消了验证设备的操作-->
     <string name="cancelVerifyDevice">You canceled to verify the device!</string>
+    <!--提示：您中途取消操作-->
+    <string name="cancelOperation">You canceled the operation!</string>
     <!--进度提示：正在验证设备-->
     <string name="beginVerify">Verifing the device now...</string>
+    <!--进度提示：正在初始化-->
+    <string name="beginInit">Initialize now...</string>
     <!--错误提示：验证设备失败-->
     <string name="verifyFailed">Verify the device faild...</string>
+    <!--错误提示：验证设备失败-->
+    <string name="initFailed">Initialize faild...</string>
     <!--错误提示：没有连接到任何蓝牙设备 (发送指令时发现无设备的错误提示)-->
     <string name="notConnectedWhenSendCmd">Not any bluetooth device connected!</string>
 </resources>

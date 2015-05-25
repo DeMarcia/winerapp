@@ -14,6 +14,7 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.util.Log;
 
@@ -27,6 +28,8 @@ import android.util.Log;
 public class LEBCentralManager {
 
 	public static final String TAG = "LEBCentralManager";
+	public static final String ACTION_ADD_DEVICE="winerapp.action.add.device";
+	public static final String BUNDLE_KEY_DEVICE="BUNDLE_KEY_DEVICE";
 
 	private static LEBCentralManager mInstance;
 	private BluetoothManager BLEManager;
@@ -100,17 +103,42 @@ public class LEBCentralManager {
 						"scaned bluetoothDevice name:" + device.getName()
 								+ " rssi：" + rssi + " scanRecord:"
 								+ scanRecord.toString());
-			if (!BLEDevices.contains(device)) {
+			boolean first=BLEDevices.size()<=0;
+			boolean unique=!BLEDevices.contains(device);
+			if (unique) {
 				BLEDevices.add(device);
+			}
+			if(first){
+				mLEBCentralCallback.scanSuccessCallback(BLEDevices);
+			}else if(unique){
+				String isPair = device.getBondState() == BluetoothDevice.BOND_BONDED ? "Bonded"
+						: "Unbond";
+				String deviceName = device.getName();
+				if (device.getName() == null) {
+					deviceName = "UnkownDevice";
+				}
+				String str = isPair + "|" + deviceName + "|"
+						+ device.getAddress();
+				Intent intent=new Intent(ACTION_ADD_DEVICE);
+				intent.putExtra(BUNDLE_KEY_DEVICE, str);
+				mContext.sendBroadcast(intent);
 			}
 		}
 
 	};
+	
+	public void stopScan(){
+		if (BLEAdapter != null) {
+			BLEAdapter.stopLeScan(mLeScanCallback);
+		}
+	}
 
 	/**
 	 * 查找所有外设
 	 */
 	public void scan() {
+		stopScan();
+		reset();
 		if (BLEAdapter != null) {
 			mHandler.postDelayed(new Runnable() {
 
@@ -119,7 +147,7 @@ public class LEBCentralManager {
 					BLEAdapter.stopLeScan(mLeScanCallback);
 					if (mLEBCentralCallback != null) {
 						if (BLEDevices.size() > 0) {
-							mLEBCentralCallback.scanSuccessCallback(BLEDevices);
+//							mLEBCentralCallback.scanSuccessCallback(BLEDevices);
 						} else {
 							mLEBCentralCallback.scanNoDeviceCallback();
 						}
@@ -183,7 +211,9 @@ public class LEBCentralManager {
 
 		@Override
 		public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-			Log.d(TAG, "找到服务了");
+			if (Constants.D)
+				Log.d(TAG, "service discovered status="+status);
+			mLEBCentralCallback.onServicesDiscovered(gatt, status);
 		};
 
 		@Override

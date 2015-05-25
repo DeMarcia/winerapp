@@ -12,7 +12,11 @@ public class Status {
     public static final int CMD_TURN_FOWARD = 0x40;
     public static final int CMD_TURN_BACK = 0x41;
     public static final int CMD_TURN_ALL = 0x42;
+    public static final int CMD_INIT_MOTO=0xbb;	//初始化MOTO的指令
 //    public static final int CMD_TPD = 0x50;	//TODO指令方式改变 看下面的数组
+    
+    //向下位机发送验证指令 TODO 这里只是为了标识状态来判断什么时候接受验证数据，并不是真的指令
+    public static final int CMD_AUTH=1000;	
 
     public static final int TURN_STATUS_FORWARD = 0;
     public static final int TURN_STATUS_BACK = 1;
@@ -33,17 +37,20 @@ public class Status {
     public static final int[] CMD_TPD_ZERO = {0x50, 0x51 , 0x52 , 0x53 , 0x54, 0x55 , 0x56 , 0x57 , 0x58, 0x59 , 0x5a , 0x5b , 0x5c, 0x5d , 0x5e };
     private int curTpdIndex=0;
 
-    private int authCode = 100;
+    private byte authCode = 0x10;
     private boolean isLightOn = false;
     private boolean isSwitchOn = false;
     private int turnStatus = TURN_STATUS_FORWARD;
     private int curCmd=-1;
     
+    //是否登录成功  验证成功+初始化(马达)成功
     private boolean logined=false;
+    //是否验证成功
+    private boolean authed=false;
 
     public void changeMoto(){
         curMoto++;
-        if(curMoto>motoNums){
+        if(curMoto>=motoNums){
             curMoto=0;
         }
         curTpdIndex=0;
@@ -53,7 +60,7 @@ public class Status {
         curTpdIndex++;
         if (motoType == MOTO_TYPE_ZERO && curTpdIndex >= TPDS_ZERO.length) {
             curTpdIndex = 0;
-        } else if (curMoto == MOTO_TYPE_NORMAL && curTpdIndex >= TPDS_NORMAL.length) {
+        } else if (motoType == MOTO_TYPE_NORMAL && curTpdIndex >= TPDS_NORMAL.length) {
             curTpdIndex = 0;
         }
     }
@@ -107,11 +114,11 @@ public class Status {
     	return false;
     }
 
-    public int getAuthCode() {
+    public byte getAuthCode() {
         return authCode;
     }
 
-    public void setAuthCode(int authCode) {
+    public void setAuthCode(byte authCode) {
         this.authCode = authCode;
     }
 
@@ -172,15 +179,15 @@ public class Status {
     }
 
     public int getTpd(){
-        if(curMoto==0){
+        if(motoType==MOTO_TYPE_ZERO){
             return TPDS_ZERO[curTpdIndex];
         }
         return TPDS_NORMAL[curTpdIndex];
     }
 
 	public boolean isLogined() {
-//		return logined;
-		return true;
+		return logined;
+//		return true;
 	}
 
 	public void setLogined(boolean logined) {
@@ -193,6 +200,14 @@ public class Status {
 
 	public void setMotoType(int motoType) {
 		this.motoType = motoType;
+	}
+
+	public boolean isAuthed() {
+		return authed;
+	}
+
+	public void setAuthed(boolean authed) {
+		this.authed = authed;
 	}
     
 }

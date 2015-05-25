@@ -27,6 +27,9 @@ public interface LEBCentralCallback {
 	/**连接上外设的回调*/
 	public void deviceConnectedCallback(BluetoothGatt gatt);
 	
+	/**发现服务后的回调*/
+	public void onServicesDiscovered(BluetoothGatt gatt, int status);
+	
 	/**未连接上外设,有包含重试连接的情况*/
 	public void deviceDisConnectedCallback(BluetoothDevice device);
 	
