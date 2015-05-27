@@ -165,14 +165,24 @@ public class MainActivity extends Activity implements OnClickListener {
 			if(info[0]==(byte)0xff)
 				return;
 			if(!status.isAuthed()&&status.getCurCmd()==Status.CMD_AUTH){
-				if(info.length==2&&info[0]==(byte)0xcc &&info[1]==status.getAuthCode()){
-					showProgressDialog(getString(R.string.beginInit));
-					//验证成功
-					status.setAuthed(true);
-					//请求初始化马达
-					sendCmd(Status.CMD_INIT_MOTO);
+				if(!status.isAuthHeadRight()){
+					//验证0xcc
+					if(info.length==1&&info[0]==(byte)0xcc){
+						status.setAuthHeadRight(true);
+					}else{
+						handleErrorOnUIThread(getString(R.string.verifyFailed));
+					}
 				}else{
-					handleErrorOnUIThread(getString(R.string.verifyFailed));
+					//Auth头已经验证过是0xcc，则
+					if(info.length==1&&info[0]==status.getAuthCode()){
+						showProgressDialog(getString(R.string.beginInit));
+						//验证成功
+						status.setAuthed(true);
+						//请求初始化马达
+						sendCmd(Status.CMD_INIT_MOTO);
+					}else{
+						handleErrorOnUIThread(getString(R.string.verifyFailed));
+					}
 				}
 				return;
 			}
@@ -217,7 +227,7 @@ public class MainActivity extends Activity implements OnClickListener {
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
 					break;
 					//特殊马达
-				case (byte)0x39:
+				case (byte)0x3a:
 					status.setMotoNums(1);
 					status.setMotoType(Status.MOTO_TYPE_ZERO);
 					break;
@@ -298,7 +308,10 @@ public class MainActivity extends Activity implements OnClickListener {
 				MainActivity.this.status.setAuthCode(randNo);
 				//验证
 				MainActivity.this.status.setCurCmd(Status.CMD_AUTH);
-				sendData(new byte[]{(byte) 0xcc,Utils.encode(randNo)});
+//				sendData(new byte[]{(byte) 0xcc,Utils.encode(randNo)});
+				//TODO 注意 此处改为分两次发送 每次一字节
+				sendCmd(0xcc);
+				sendCmd(Utils.encode(randNo));
 				runOnUiThread(new Runnable() {
 					public void run() {
 						initView();
