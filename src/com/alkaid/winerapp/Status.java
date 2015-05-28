@@ -46,6 +46,7 @@ public class Status {
     //是否登录成功  验证成功+初始化(马达)成功
     private boolean logined=false;
     //验证头是否正确 即验证头是否是0xcc
+    @Deprecated
     private boolean authHeadRight=false;
     //是否验证成功
     private boolean authed=false;
@@ -206,16 +207,20 @@ public class Status {
 
 	public boolean isAuthed() {
 		return authed;
+//		return true;
 	}
 
 	public void setAuthed(boolean authed) {
 		this.authed = authed;
 	}
 
+	@Deprecated
 	public boolean isAuthHeadRight() {
 		return authHeadRight;
+//		return true;
 	}
 
+	@Deprecated
 	public void setAuthHeadRight(boolean authHeadRight) {
 		this.authHeadRight = authHeadRight;
 	}

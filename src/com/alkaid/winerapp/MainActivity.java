@@ -138,8 +138,6 @@ public class MainActivity extends Activity implements OnClickListener {
 
 		@Override
 		public void deviceConnectedCallback(BluetoothGatt gatt) {
-			
-
 		}
 
 		@Override
@@ -149,13 +147,36 @@ public class MainActivity extends Activity implements OnClickListener {
 
 		@Override
 		public void requestReadOrWrite() {
-
 		}
 
 		@Override
 		public void responseReadOrWrite() {
-
 		}
+		//发现目标Characteristic 开始验证连接
+		@Override
+		public void onTargetCharacteristicDiscovered(BluetoothGatt gatt) {
+			showProgressDialog(getString(R.string.beginVerify));
+//				dismissPdg();
+			MainActivity.this. status = new Status();
+			// // startReader();
+			 // 开始验证链接
+			byte randNo = (byte) (Math.random()*0xff );
+			if(Constants.D){
+				Log.i(TAG, "rand 0x"+Utils.byte2HexStr(randNo));
+			}
+			toastDebug("The Auth Code is 0x"+Utils.byte2HexStr(randNo));
+			MainActivity.this.status.setAuthCode(randNo);
+			//验证
+//				sendData(new byte[]{(byte) 0xcc,Utils.encode(randNo)});
+			//TODO 注意 此处改为分两次发送 每次一字节
+			sendCmd(0xcc,Status.CMD_AUTH);
+			sendCmd(Utils.encode(randNo),Status.CMD_AUTH);
+			runOnUiThread(new Runnable() {
+				public void run() {
+					initView();
+				}
+			});
+		};
 
 		@Override
 		public void onCharacteristicChanged(byte[] info) {
@@ -165,14 +186,14 @@ public class MainActivity extends Activity implements OnClickListener {
 			if(info[0]==(byte)0xff)
 				return;
 			if(!status.isAuthed()&&status.getCurCmd()==Status.CMD_AUTH){
-				if(!status.isAuthHeadRight()){
+				/*if(!status.isAuthHeadRight()){
 					//验证0xcc
 					if(info.length==1&&info[0]==(byte)0xcc){
 						status.setAuthHeadRight(true);
 					}else{
 						handleErrorOnUIThread(getString(R.string.verifyFailed));
 					}
-				}else{
+				}else{*/
 					//Auth头已经验证过是0xcc，则
 					if(info.length==1&&info[0]==status.getAuthCode()){
 						showProgressDialog(getString(R.string.beginInit));
@@ -183,7 +204,7 @@ public class MainActivity extends Activity implements OnClickListener {
 					}else{
 						handleErrorOnUIThread(getString(R.string.verifyFailed));
 					}
-				}
+//				}
 				return;
 			}
 			//初始化moto数量反馈
@@ -296,27 +317,6 @@ public class MainActivity extends Activity implements OnClickListener {
 		@Override
 		public void onServicesDiscovered(BluetoothGatt gatt, int status) {
 			if(status==BluetoothGatt.GATT_SUCCESS){
-				showProgressDialog(getString(R.string.beginVerify));
-				MainActivity.this. status = new Status();
-				// // startReader();
-				 // 开始验证链接
-				byte randNo = (byte) (Math.random()*0xff );
-				if(Constants.D){
-					Log.i(TAG, "rand 0x"+Utils.byte2HexStr(randNo));
-				}
-				toastDebug("The Auth Code is 0x"+Utils.byte2HexStr(randNo));
-				MainActivity.this.status.setAuthCode(randNo);
-				//验证
-				MainActivity.this.status.setCurCmd(Status.CMD_AUTH);
-//				sendData(new byte[]{(byte) 0xcc,Utils.encode(randNo)});
-				//TODO 注意 此处改为分两次发送 每次一字节
-				sendCmd(0xcc);
-				sendCmd(Utils.encode(randNo));
-				runOnUiThread(new Runnable() {
-					public void run() {
-						initView();
-					}
-				});
 			}else{
 				handleErrorOnUIThread(getString(R.string.discoverServiceFailed));
 			}
@@ -466,6 +466,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	
 	private void toastDebug(final String msg){
 		if(Constants.D){
+			Log.i(TAG,msg);
 			runOnUiThread(new Runnable() {
 				public void run() {
 					Toast.makeText(MainActivity.this, msg,
@@ -474,13 +475,23 @@ public class MainActivity extends Activity implements OnClickListener {
 			});
 		}
 	}
+	
+	/** 发送指令 */
+	public void sendCmd(final int cmd,int curCmd) {
+		status.setCurCmd(curCmd);
+		byte cmdbyte=(byte)cmd;
+		toastDebug ("send data：0x" + String.format("%02X", cmdbyte));
+		LEBCentralManager.getInstance(this).writeCharacteristic(
+				new byte[] { cmdbyte });
+	}
 
 	/** 发送指令 */
 	public void sendCmd(final int cmd) {
 		status.setCurCmd(cmd);
-		toastDebug ("send data：0x" + String.format("%02X", cmd));
+		byte cmdbyte=(byte)cmd;
+		toastDebug ("send data：0x" + String.format("%02X", cmdbyte));
 		LEBCentralManager.getInstance(this).writeCharacteristic(
-				new byte[] { (byte) cmd });
+				new byte[] { cmdbyte });
 	}
 	/** 发送指令 */
 	public void sendData(final byte[] data) {

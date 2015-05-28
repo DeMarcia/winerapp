@@ -51,6 +51,7 @@ public class LEBCentralManager {
 	private boolean isEnableReq = false;// 是否可以读和写,当false的话 阻塞不允许做读写操作
 	private boolean isConnect = false;
 	private String writeUUID=null;
+	private boolean targetCharacteristicDiscovered=false;
 
 	// 常量
 	private static final long SCAN_PERIOD = 5000;// 查找外设期限
@@ -214,6 +215,16 @@ public class LEBCentralManager {
 			if (Constants.D)
 				Log.d(TAG, "service discovered status="+status);
 			mLEBCentralCallback.onServicesDiscovered(gatt, status);
+			if(!targetCharacteristicDiscovered && status==BluetoothGatt.GATT_SUCCESS){
+				ArrayList<BluetoothGattCharacteristic> characteristics = getCharacteristic();
+				for (BluetoothGattCharacteristic characteristic : characteristics) {
+					String uuid = characteristic.getUuid().toString();
+					if(uuid.equalsIgnoreCase(writeUUID)){
+						targetCharacteristicDiscovered=true;
+						mLEBCentralCallback.onTargetCharacteristicDiscovered(gatt);
+					}
+				}
+			}
 		};
 
 		@Override
@@ -352,7 +363,7 @@ public class LEBCentralManager {
 		BLEDevices.clear();
 		isEnableReq = false;
 		isConnect =false;
-
+		targetCharacteristicDiscovered=false;
 	}
 	public void setWriteUUID(String writeUUID) {
 		this.writeUUID = writeUUID;

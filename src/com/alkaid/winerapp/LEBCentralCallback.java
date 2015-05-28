@@ -30,6 +30,9 @@ public interface LEBCentralCallback {
 	/**发现服务后的回调*/
 	public void onServicesDiscovered(BluetoothGatt gatt, int status);
 	
+	/**发现目标Characteristic*/
+	public void onTargetCharacteristicDiscovered(BluetoothGatt gatt);
+	
 	/**未连接上外设,有包含重试连接的情况*/
 	public void deviceDisConnectedCallback(BluetoothDevice device);
 	
