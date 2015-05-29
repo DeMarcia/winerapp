@@ -553,10 +553,6 @@ public class MainActivity extends Activity implements OnClickListener {
 //		}
 	}
 
-	private void shutdown() {
-		LEBCentralManager.getInstance().stopScan();
-	}
-
 	private void dismissPdg() {
 		runOnUiThread(new Runnable() {
 			public void run() {
@@ -584,7 +580,7 @@ public class MainActivity extends Activity implements OnClickListener {
 							new DialogInterface.OnCancelListener() {
 								@Override
 								public void onCancel(DialogInterface dialog) {
-									shutdown();
+									LEBCentralManager.getInstance().shutdown();
 									dismissPdg();
 									handleError(getString(R.string.cancelOperation));
 								}
@@ -602,7 +598,7 @@ public class MainActivity extends Activity implements OnClickListener {
 
 	private void handleError(String msg) {
 		dismissPdg();
-		shutdown();
+		LEBCentralManager.getInstance(this).shutdown();
 		initView();
 		msg += getString(R.string.tip_error_append);
 		if (null != errorDialog && errorDialog.isShowing()) {
@@ -671,5 +667,11 @@ public class MainActivity extends Activity implements OnClickListener {
 		imgTurn.setEnabled(enable);
 	}
 
+	@Override
+	protected void onDestroy() {
+		Log.i(TAG, "onDestroy");
+		LEBCentralManager.getInstance(this).shutdown();
+		super.onDestroy();
+	}
 
 }

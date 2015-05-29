@@ -128,6 +128,17 @@ public class LEBCentralManager {
 
 	};
 	
+	public void shutdown(){
+		if (BLEAdapter != null) {
+			BLEAdapter.stopLeScan(mLeScanCallback);
+			BLEAdapter.cancelDiscovery();
+		}
+		if(null!=BLEGatt){
+			BLEGatt.disconnect();
+			BLEGatt.close();
+		}
+	}
+	
 	public void stopScan(){
 		if (BLEAdapter != null) {
 			BLEAdapter.stopLeScan(mLeScanCallback);
@@ -138,7 +149,10 @@ public class LEBCentralManager {
 	 * 查找所有外设
 	 */
 	public void scan() {
-		stopScan();
+		if (BLEAdapter != null) {
+			BLEAdapter.stopLeScan(mLeScanCallback);
+			BLEAdapter.cancelDiscovery();
+		}
 		reset();
 		if (BLEAdapter != null) {
 			mHandler.postDelayed(new Runnable() {
