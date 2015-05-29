@@ -35,14 +35,14 @@ public class Utils {
 		random &= 0xf0;
 		random = (byte) ((random >> 4) & 0x0f);
 		random |= temp;
-		// 和0xa5 Xor
-		random ^= 0xa5;
+		// 和0x5a Xor
+		random ^= 0x5a;
 		return random;
 	}
 
 	public static byte decode(byte num) {
-		// 和0xa5 Xor
-		num ^= 0xa5;
+		// 和0x5a Xor
+		num ^= 0x5a;
 		// 高低位取反
 		byte temp = (byte) ((num << 4) & 0xf0);
 		num &= 0xf0;

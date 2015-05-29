@@ -16,25 +16,25 @@ public class Test {
 		p(decodeNo);
 	}
 	
-	private static byte encode(byte random){
-		//高低位取反
-		byte temp=(byte) ((random<<4)&0xf0);
-		random&=0xf0;
-		random=(byte) ((random>>4)&0x0f);
-		random|=temp;
-		//和0xf0 Xor
-		random^=0xf0;
+	public static byte encode(byte random) {
+		// 高低位取反
+		byte temp = (byte) ((random << 4) & 0xf0);
+		random &= 0xf0;
+		random = (byte) ((random >> 4) & 0x0f);
+		random |= temp;
+		// 和0x5a Xor
+		random ^= 0x5a;
 		return random;
 	}
-	
-	private static byte decode(byte num){
-		//和0xf0 Xor
-		num^=0xf0;
-		//高低位取反
-		byte temp=(byte) ((num<<4)&0xf0);
-		num&=0xf0;
-		num=(byte) ((num>>4)&0x0f);
-		num|=temp;
+
+	public static byte decode(byte num) {
+		// 和0x5a Xor
+		num ^= 0x5a;
+		// 高低位取反
+		byte temp = (byte) ((num << 4) & 0xf0);
+		num &= 0xf0;
+		num = (byte) ((num >> 4) & 0x0f);
+		num |= temp;
 		return num;
 	}
 	
