@@ -8,7 +8,8 @@ public class Status {
     public static final int CMD_LIGHT_OFF = 0x11;
     public static final int CMD_SWITCH_ON = 0x20;
     public static final int CMD_SWITCH_OFF = 0x21;
-    public static final int CMD_MOTO = 0x30;
+//    public static final int CMD_MOTO= 0x30;	//TODO 指令方式改变 看下面的getCurMotoCmd()  
+    public static final int CMD_MOTO_BEGIN=0x80;
     public static final int CMD_TURN_FOWARD = 0x40;
     public static final int CMD_TURN_BACK = 0x41;
     public static final int CMD_TURN_ALL = 0x42;
@@ -16,7 +17,9 @@ public class Status {
 //    public static final int CMD_TPD = 0x50;	//TODO指令方式改变 看下面的数组
     
     //向下位机发送验证指令 TODO 这里只是为了标识状态来判断什么时候接受验证数据，并不是真的指令
-    public static final int CMD_AUTH=1000;	
+    public static final int CMD_AUTH_FLAG=1000;	
+    //向下位机发送变更moto的指令 TODO 这里只是为了标识状态来判断当前的指令是用来改变MOTO的是为了方便后面的状态改变而用的标识，并非真的指令，真的智力见getCurMotoCmd()
+    public static final int CMD_MOTO_FLAG = 1001;
 
     public static final int TURN_STATUS_FORWARD = 0;
     public static final int TURN_STATUS_BACK = 1;
@@ -57,6 +60,14 @@ public class Status {
             curMoto=0;
         }
         curTpdIndex=0;
+    }
+    public int getCurMotoCmd(){
+    	int index=curMoto+1;
+    	int cmd=-1;
+    	if(index==motoNums)
+    		index=0;
+    	cmd=index+CMD_MOTO_BEGIN;
+    	return cmd;
     }
 
     public void changeTpd() {

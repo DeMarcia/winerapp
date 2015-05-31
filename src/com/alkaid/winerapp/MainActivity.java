@@ -169,8 +169,8 @@ public class MainActivity extends Activity implements OnClickListener {
 			//验证
 //				sendData(new byte[]{(byte) 0xcc,Utils.encode(randNo)});
 			//TODO 注意 此处改为分两次发送 每次一字节
-			sendCmd(0xcc,Status.CMD_AUTH);
-			sendCmd(Utils.encode(randNo),Status.CMD_AUTH);
+			sendCmd(0xcc,Status.CMD_AUTH_FLAG);
+			sendCmd(Utils.encode(randNo),Status.CMD_AUTH_FLAG);
 			runOnUiThread(new Runnable() {
 				public void run() {
 					initView();
@@ -185,7 +185,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			//test 忽略目前外设返回的0xFF...
 			if(info[0]==(byte)0xff)
 				return;
-			if(!status.isAuthed()&&status.getCurCmd()==Status.CMD_AUTH){
+			if(!status.isAuthed()&&status.getCurCmd()==Status.CMD_AUTH_FLAG){
 				/*if(!status.isAuthHeadRight()){
 					//验证0xcc
 					if(info.length==1&&info[0]==(byte)0xcc){
@@ -281,7 +281,7 @@ public class MainActivity extends Activity implements OnClickListener {
 				case Status.CMD_LIGHT_ON:
 					status.setLightOn(true);
 					break;
-				case Status.CMD_MOTO:
+				case Status.CMD_MOTO_FLAG:
 					status.changeMoto();
 					break;
 				case Status.CMD_SWITCH_OFF:
@@ -339,8 +339,9 @@ public class MainActivity extends Activity implements OnClickListener {
 		case R.id.imgMoto:
 			if(status.getMotoNums()<=1)
 				return;
-			cmd = Status.CMD_MOTO;
-			break;
+			cmd = status.getCurMotoCmd();
+			sendCmd(cmd, Status.CMD_MOTO_FLAG);
+			return;	//TODO 注意这里已经发完指令 直接返回
 		case R.id.imgSwitch:
 			cmd = status.isSwitchOn() ? Status.CMD_SWITCH_OFF
 					: Status.CMD_SWITCH_ON;
