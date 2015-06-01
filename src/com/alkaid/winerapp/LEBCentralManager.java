@@ -235,6 +235,7 @@ public class LEBCentralManager {
 					String uuid = characteristic.getUuid().toString();
 					if(uuid.equalsIgnoreCase(writeUUID)){
 						targetCharacteristicDiscovered=true;
+						BLEGatt.setCharacteristicNotification(characteristic, true);
 						mLEBCentralCallback.onTargetCharacteristicDiscovered(gatt);
 					}
 				}
@@ -308,7 +309,7 @@ public class LEBCentralManager {
 				Log.d(TAG, "write char uuid="+uuid);
 				byte[] values = data;
 				characteristic.setValue(values);
-				BLEGatt.setCharacteristicNotification(characteristic, true);
+//				BLEGatt.setCharacteristicNotification(characteristic, true);
 				BLEGatt.writeCharacteristic(characteristic);
 			}
 		}
