@@ -9,7 +9,9 @@ public class Status {
     public static final int CMD_SWITCH_ON = 0x20;
     public static final int CMD_SWITCH_OFF = 0x21;
 //    public static final int CMD_MOTO= 0x30;	//TODO 指令方式改变 看下面的getCurMotoCmd()  
+    public static final int CMD_MOTO_ZERO=0x7f;	//初始化特殊马达
     public static final int CMD_MOTO_BEGIN=0x80;
+    public static final int CMD_MOTO_END=0x97;
     public static final int CMD_TURN_FOWARD = 0x40;
     public static final int CMD_TURN_BACK = 0x41;
     public static final int CMD_TURN_ALL = 0x42;
@@ -217,6 +219,9 @@ public class Status {
 	}
 
 	public boolean isAuthed() {
+		if(!Constants.isNeedAuth){
+			return true;
+		}
 		return authed;
 //		return true;
 	}

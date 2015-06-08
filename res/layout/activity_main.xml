@@ -1,9 +1,11 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" tools:context=".MainActivity"
+    android:layout_height="match_parent" tools:context=".MainActivity">
+    
+<RelativeLayout android:layout_width="match_parent"
+    android:layout_height="match_parent" 
     android:background="@drawable/main_bg"
     android:id="@+id/layMain">
-
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"
@@ -132,4 +134,22 @@
         </LinearLayout>
 
     </RelativeLayout>
+</RelativeLayout>
+
+<LinearLayout  android:id="@+id/layDebug"
+            android:layout_width="fill_parent" android:layout_height="fill_parent"
+            android:orientation="vertical" android:background="@android:color/white"
+           >
+	        <EditText android:id="@+id/etReceive"
+	            android:layout_width="fill_parent" android:layout_height="fill_parent"
+	            android:layout_weight="2" android:editable="false" android:singleLine="false"
+	            android:scrollbars="vertical" />
+	        <EditText android:id="@+id/etSend"
+	            android:layout_width="fill_parent" android:layout_height="fill_parent"
+	            android:layout_weight="1" />
+	        <Button android:id="@+id/btnSend" android:text="send"
+	            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+	        <Button android:id="@+id/btnClear" android:text="clear"
+	            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
 </RelativeLayout>

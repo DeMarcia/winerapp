@@ -114,6 +114,10 @@ public final class R {
         public static final int tpd=0x7f02005a;
     }
     public static final class id {
+        public static final int btnClear=0x7f080012;
+        public static final int btnSend=0x7f080011;
+        public static final int etReceive=0x7f08000f;
+        public static final int etSend=0x7f080010;
         public static final int imgCurMoto=0x7f08000c;
         public static final int imgCurTpd=0x7f08000d;
         public static final int imgLight=0x7f080002;
@@ -127,6 +131,7 @@ public final class R {
         public static final int imgTurnForward=0x7f080008;
         public static final int layBar=0x7f080001;
         public static final int layContent=0x7f080007;
+        public static final int layDebug=0x7f08000e;
         public static final int layMain=0x7f080000;
     }
     public static final class layout {

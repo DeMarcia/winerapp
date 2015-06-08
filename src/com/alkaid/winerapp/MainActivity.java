@@ -25,6 +25,8 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -44,6 +46,10 @@ public class MainActivity extends Activity implements OnClickListener {
 	// animation
 	private AnimationDrawable animLightOn, animSwitchOn, animTurnBack,
 			animTurnForward;
+	//debug
+	private View layDebug;
+	private Button btnSend,btnClear;
+	private EditText etReceive,etSend;
 
 	private static final int REQUEST_ENABLE_BT = 1;
 
@@ -73,6 +79,15 @@ public class MainActivity extends Activity implements OnClickListener {
 		imgSwitch = (ImageView) findViewById(R.id.imgSwitch);
 		imgTpd = (ImageView) findViewById(R.id.imgTpd);
 		imgTurn = (ImageView) findViewById(R.id.imgTurn);
+		//deubg view
+		layDebug=findViewById(R.id.layDebug);
+		btnClear=(Button) findViewById(R.id.btnClear);
+		btnSend=(Button) findViewById(R.id.btnSend);
+		etReceive=(EditText) findViewById(R.id.etReceive);
+		etSend=(EditText) findViewById(R.id.etSend);
+		layDebug.setVisibility(Constants.DEBUGCONSOLE?View.VISIBLE:View.GONE);
+		btnClear.setOnClickListener(this);
+		btnSend.setOnClickListener(this);
 		// init anim
 		animLightOn = (AnimationDrawable) getResources().getDrawable(
 				R.drawable.anim_light_on);
@@ -155,12 +170,29 @@ public class MainActivity extends Activity implements OnClickListener {
 		//发现目标Characteristic 开始验证连接
 		@Override
 		public void onTargetCharacteristicDiscovered(BluetoothGatt gatt) {
-			showProgressDialog(getString(R.string.beginVerify));
 //				dismissPdg();
 			MainActivity.this. status = new Status();
+			//test
+			if(Constants.DEBUGCONSOLE){
+				dismissPdg();
+				return;
+			}
+			//test
+			if(!Constants.isNeedAuth){
+				showProgressDialog(getString(R.string.beginInit));
+				runOnUiThread(new Runnable() {
+					public void run() {
+						initView();
+					}
+				});
+				//请求初始化马达
+				sendCmd(Status.CMD_INIT_MOTO);
+				return;
+			}
+			showProgressDialog(getString(R.string.beginVerify));
 			// // startReader();
 			 // 开始验证链接
-			byte randNo = (byte) (Math.random()*0xff );
+			byte randNo = (byte) (Math.random()*0xfe );
 			if(Constants.D){
 				Log.i(TAG, "rand 0x"+Utils.byte2HexStr(randNo));
 			}
@@ -170,7 +202,9 @@ public class MainActivity extends Activity implements OnClickListener {
 //				sendData(new byte[]{(byte) 0xcc,Utils.encode(randNo)});
 			//TODO 注意 此处改为分两次发送 每次一字节
 			sendCmd(0xcc,Status.CMD_AUTH_FLAG);
-			sendCmd(Utils.encode(randNo),Status.CMD_AUTH_FLAG);
+			//TODO 改为不加密了
+//			sendCmd(Utils.encode(randNo),Status.CMD_AUTH_FLAG);
+			sendCmd(randNo,Status.CMD_AUTH_FLAG);
 			runOnUiThread(new Runnable() {
 				public void run() {
 					initView();
@@ -182,6 +216,10 @@ public class MainActivity extends Activity implements OnClickListener {
 		public void onCharacteristicChanged(byte[] info) {
 			final String hexStr = Utils.byteArrayToHex(info);
 			toastDebug("receive data:0x"+hexStr);
+			if(Constants.DEBUGCONSOLE){
+				etReceive.setText(etReceive.getText().toString()+" "+hexStr);
+				return;
+			}
 			//test 忽略目前外设返回的0xFF...
 			if(info[0]==(byte)0xff)
 				return;
@@ -195,6 +233,7 @@ public class MainActivity extends Activity implements OnClickListener {
 					}
 				}else{*/
 					//Auth头已经验证过是0xcc，则
+				toastDebug("开始验证：receiveCode="+hexStr+",authcode="+Utils.byte2HexStr(status.getAuthCode()));
 					if(info.length==1&&info[0]==status.getAuthCode()){
 						showProgressDialog(getString(R.string.beginInit));
 						//验证成功
@@ -210,7 +249,18 @@ public class MainActivity extends Activity implements OnClickListener {
 			//初始化moto数量反馈
 			if(status.isAuthed() && !status.isLogined() && status.getCurCmd()==Status.CMD_INIT_MOTO && info.length==1){
 				status.setLogined(true);
-				switch (info[0]) {
+				//TODO 初始化指令已经修改为0x7f开始
+				int motoData=Utils.byteArrayToInt(info);
+				if(motoData==Status.CMD_MOTO_ZERO){
+					status.setMotoNums(1);
+					status.setMotoType(Status.MOTO_TYPE_ZERO);
+				}else if(motoData>=Status.CMD_MOTO_BEGIN&&motoData<Status.CMD_MOTO_END){
+					status.setMotoNums(motoData-Status.CMD_MOTO_BEGIN+1);
+					status.setMotoType(Status.MOTO_TYPE_NORMAL);
+				}else{
+					status.setLogined(false);
+				}
+				/*switch (info[0]) {
 				case (byte)0x30:
 					status.setMotoNums(1);
 					status.setMotoType(Status.MOTO_TYPE_NORMAL);
@@ -255,7 +305,7 @@ public class MainActivity extends Activity implements OnClickListener {
 				default:
 					status.setLogined(false);
 					break;
-				}
+				}*/
 				//马达初始化成功代表登录成功
 				if(status.isLogined()){
 					runOnUiThread(new Runnable() {
@@ -326,6 +376,31 @@ public class MainActivity extends Activity implements OnClickListener {
 
 	@Override
 	public void onClick(View v) {
+		//debug
+		if(Constants.DEBUGCONSOLE){
+			switch (v.getId()) {
+			case R.id.btnClear:
+				etSend.setText("");
+				return;
+			case R.id.btnSend:
+				if(etSend.getText().toString().trim().length()!=2){
+					Toast.makeText(this, "发送的数据只能为00-ff", Toast.LENGTH_SHORT).show();
+					return;
+				}
+				int dd;
+				try {
+					dd = Integer.parseInt(etSend.getText().toString().trim(),16);
+				} catch (NumberFormatException e) {
+					Toast.makeText(this, "发送的数据只能为00-ff", Toast.LENGTH_SHORT).show();
+					return;
+				}
+				sendCmd(dd);
+				return ;
+			}
+			return;
+		}
+		
+		
 		int cmd = -1;
         if(!status.isLogined()){
             handleError(getString(R.string.notConnectedWhenSendCmd));
@@ -362,6 +437,7 @@ public class MainActivity extends Activity implements OnClickListener {
 				break;
 			}
 			break;
+			
 		default:
 			return;
 		}
@@ -476,7 +552,13 @@ public class MainActivity extends Activity implements OnClickListener {
 			});
 		}
 	}
-	
+	/** 发送指令 */
+	public void sendCmd(final byte cmd,int curCmd) {
+		status.setCurCmd(curCmd);
+		toastDebug ("send data：0x" + String.format("%02X", cmd));
+		LEBCentralManager.getInstance(this).writeCharacteristic(
+				new byte[] { cmd });
+	}
 	/** 发送指令 */
 	public void sendCmd(final int cmd,int curCmd) {
 		status.setCurCmd(curCmd);
@@ -598,6 +680,8 @@ public class MainActivity extends Activity implements OnClickListener {
 	}
 
 	private void handleError(String msg) {
+		if(this.isFinishing()||this.isDestroyed())
+			return;
 		dismissPdg();
 		LEBCentralManager.getInstance(this).shutdown();
 		initView();
@@ -671,6 +755,9 @@ public class MainActivity extends Activity implements OnClickListener {
 	@Override
 	protected void onDestroy() {
 		Log.i(TAG, "onDestroy");
+		mHandler.removeMessages(MSG_WHAT_ERROR);
+		mHandler.removeMessages(MSG_WHAT_UPDATE_STATUS);
+		mHandler.removeMessages(MSG_WHAT_VERIFY_ERROR);
 		LEBCentralManager.getInstance(this).shutdown();
 		super.onDestroy();
 	}
