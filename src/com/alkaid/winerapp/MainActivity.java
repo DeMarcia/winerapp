@@ -10,6 +10,7 @@ import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -58,11 +59,16 @@ public class MainActivity extends Activity implements OnClickListener {
 	private static final int MSG_WHAT_ERROR = 3;
 	private static final int MSG_WHAT_UPDATE_STATUS = 4;
 	private static final int MSG_WHAT_VERIFY_ERROR = 5;
+	private long curTime=0;
+	private static final long DEFAULT_WAIT_TIME=500;
+	private Context context;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		context=this;
+		curTime=System.currentTimeMillis();
 		// find view
 		layBar = findViewById(R.id.layBar);
 		layMain = findViewById(R.id.layMain);
@@ -198,13 +204,11 @@ public class MainActivity extends Activity implements OnClickListener {
 			}
 			toastDebug("The Auth Code is 0x"+Utils.byte2HexStr(randNo));
 			MainActivity.this.status.setAuthCode(randNo);
-			//验证
-//				sendData(new byte[]{(byte) 0xcc,Utils.encode(randNo)});
 			//TODO 注意 此处改为分两次发送 每次一字节
 			sendCmd(0xcc,Status.CMD_AUTH_FLAG);
 			//TODO 改为不加密了
-//			sendCmd(Utils.encode(randNo),Status.CMD_AUTH_FLAG);
-			sendCmd(randNo,Status.CMD_AUTH_FLAG);
+			sendCmd(Utils.encode(randNo),Status.CMD_AUTH_FLAG);
+//			sendCmd(randNo,Status.CMD_AUTH_FLAG);
 			runOnUiThread(new Runnable() {
 				public void run() {
 					initView();
@@ -544,43 +548,84 @@ public class MainActivity extends Activity implements OnClickListener {
 	private void toastDebug(final String msg){
 		if(Constants.D){
 			Log.i(TAG,msg);
+		}
+		if(Constants.T){
 			runOnUiThread(new Runnable() {
 				public void run() {
 					Toast.makeText(MainActivity.this, msg,
 							Toast.LENGTH_SHORT).show();
 				}
 			});
+			
 		}
 	}
+	
+	private void waitTime(){
+		/*long time=System.currentTimeMillis();
+		long wt=time-this.curTime;
+		if(wt<DEFAULT_WAIT_TIME){
+			try {
+				Thread.sleep(DEFAULT_WAIT_TIME-wt);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		this.curTime=System.currentTimeMillis();*/
+	}
+	
 	/** 发送指令 */
 	public void sendCmd(final byte cmd,int curCmd) {
+		waitTime();
 		status.setCurCmd(curCmd);
 		toastDebug ("send data：0x" + String.format("%02X", cmd));
-		LEBCentralManager.getInstance(this).writeCharacteristic(
-				new byte[] { cmd });
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				LEBCentralManager.getInstance(context).writeCharacteristic(
+						new byte[] { cmd });
+			}
+		});
 	}
 	/** 发送指令 */
 	public void sendCmd(final int cmd,int curCmd) {
+		waitTime();
 		status.setCurCmd(curCmd);
-		byte cmdbyte=(byte)cmd;
+		final byte cmdbyte=(byte)cmd;
 		toastDebug ("send data：0x" + String.format("%02X", cmdbyte));
-		LEBCentralManager.getInstance(this).writeCharacteristic(
-				new byte[] { cmdbyte });
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				LEBCentralManager.getInstance(context).writeCharacteristic(
+						new byte[] { cmdbyte });
+			}
+		});
 	}
 
 	/** 发送指令 */
 	public void sendCmd(final int cmd) {
+		waitTime();
 		status.setCurCmd(cmd);
-		byte cmdbyte=(byte)cmd;
+		final byte cmdbyte=(byte)cmd;
 		toastDebug ("send data：0x" + String.format("%02X", cmdbyte));
-		LEBCentralManager.getInstance(this).writeCharacteristic(
-				new byte[] { cmdbyte });
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				LEBCentralManager.getInstance(context).writeCharacteristic(
+						new byte[] { cmdbyte });
+			}
+		});
 	}
 	/** 发送指令 */
 	public void sendData(final byte[] data) {
+		waitTime();
 		String hexStr = Utils.byteArrayToHex(data);
 		toastDebug("send data：0x" + hexStr);
-		LEBCentralManager.getInstance(this).writeCharacteristic(data);
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				LEBCentralManager.getInstance(context).writeCharacteristic(data);
+			}
+		});
 	}
 
 	@Override

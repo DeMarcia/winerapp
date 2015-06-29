@@ -20,13 +20,13 @@ public class Constants {
     public static final String SMS_SERVER_NO="13631652575";
 
     /** 是否�?启debug */
-    public static final boolean D=false;
+    public static final boolean D=true;
     /** 是否�?启Toast打印log */
     public static final boolean T=false;
     
     public static final boolean DEBUGCONSOLE=false;
     /**是否需要验证 false用于测试*/
-    public static final boolean isNeedAuth=false;
+    public static final boolean isNeedAuth=true;
     /** 目标设备mac */
 	public static final String TARGET_DEVICES_ADDRESS="D8:B3:77:E0:93:0E";	//htc mhh
 //	public static final String TARGET_DEVICES_ADDRESS="04:18:0F:30:AB:A8";  //nexus s lc

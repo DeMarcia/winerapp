@@ -1,16 +1,7 @@
 package com.alkaid.winerapp;
 
-import android.app.ProgressDialog;
-import android.content.Context;
-import android.widget.Toast;
 
 public class Utils {
-
-	public static void toast(Context context, String text) {
-		if (Constants.T) {
-			Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
-		}
-	}
 
 
 	/**
